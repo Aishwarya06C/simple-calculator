@@ -1,49 +1,53 @@
-
 pipeline {
     agent any
-    environment {
-    PATH = "/opt/homebrew/bin:/opt/homebrew/opt/openjdk@17/bin:${env.PATH}"
-}
+
+    // Use tool names configured in Jenkins (Manage Jenkins -> Tools)
+    tools {
+        jdk 'JDK 25'
+        maven 'Maven-3.10'
+    }
 
     stages {
-
-        stage('SCM Checkout') {
+        stage('SCM Synchronization') {
             steps {
-                echo 'Source code checked out from GitHub'
+                echo '📥 Pulling latest code changes from Git repository...'
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Static Verification') {
             steps {
-                echo 'Building Maven project'
-                sh 'mvn clean compile'
+                echo '🔍 Checking Maven project layout rules...'
+                sh 'mvn validate'
             }
         }
 
-        stage('Test') {
+        stage('Compilation & Automated Testing') {
             steps {
-                echo 'Running JUnit tests'
-                sh 'mvn test'
+                echo '⚙️ Compiling class layers and verifying test logic stability...'
+                sh 'mvn clean package'
             }
             post {
                 always {
+                    echo '📊 Publishing Unit Test trends to Jenkins Dashboard...'
                     junit '**/target/surefire-reports/*.xml'
                 }
             }
         }
 
-        stage('Package') {
+        stage('SonarQube Analysis') {
             steps {
-                echo 'Packaging application'
-                sh 'mvn package'
+                echo 'Starting SonarQube analysis'
+                withSonarQubeEnv('SonarQube-Local') {
+                    sh 'mvn sonar:sonar'
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'Experiment 8 completed successfully!'
+            echo 'Build and SonarQube analysis completed!'
         }
         failure {
             echo 'Pipeline failed. Check Console Output.'
