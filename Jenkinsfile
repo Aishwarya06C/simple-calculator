@@ -1,37 +1,40 @@
+
 pipeline {
     agent any
 
-    // Use tool names configured in Jenkins (Manage Jenkins -> Tools)
-    tools {
-        jdk 'JDK 25'
-        maven 'Maven-3.10'
+    environment {
+        PATH = "/opt/homebrew/bin:${env.PATH}"
     }
 
     stages {
-        stage('SCM Synchronization') {
+
+        stage('SCM Checkout') {
             steps {
-                echo '📥 Pulling latest code changes from Git repository...'
+                echo 'Fetching source from GitHub'
                 checkout scm
             }
         }
 
-        stage('Static Verification') {
+        stage('Build') {
             steps {
-                echo '🔍 Checking Maven project layout rules...'
-                sh 'mvn validate'
+                sh 'mvn clean compile'
             }
         }
 
-        stage('Compilation & Automated Testing') {
+        stage('Test') {
             steps {
-                echo '⚙️ Compiling class layers and verifying test logic stability...'
-                sh 'mvn clean package'
+                sh 'mvn test'
             }
             post {
                 always {
-                    echo '📊 Publishing Unit Test trends to Jenkins Dashboard...'
                     junit '**/target/surefire-reports/*.xml'
                 }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                sh 'mvn package'
             }
         }
 
@@ -47,7 +50,7 @@ pipeline {
 
     post {
         success {
-            echo 'Build and SonarQube analysis completed!'
+            echo 'Experiment 9 completed successfully!'
         }
         failure {
             echo 'Pipeline failed. Check Console Output.'
